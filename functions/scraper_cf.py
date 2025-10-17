@@ -1,13 +1,30 @@
 import time
+import os
 import re
 from datetime import datetime
 import schemas
 import requests
 from bs4 import BeautifulSoup
 from typing import List
+from database import mongodb_client
+from functions.crud import insert_availabilities
     
 
-def scrape_champ_fleuri(username:str, password:str, selected_date: str) -> List[schemas.AvailableSlot]:
+def scrape_champ_fleuri(username:str, password:str, selected_date: str) -> List[schemas.AvailabilityCreate]:
+    """
+    Scraper for court availabilities at Champ-Fleuri.
+    
+    Parameters:
+        - username (str): Username used to login to https://tennispadelchampfleuri.re/login
+        - password (str): Username used to login to https://tennispadelchampfleuri.re/login
+        - selected_date (str): Date for which you want to scrape availabilities, in the format 'DD/MM/YYYY'
+    
+    Returns:
+        - list of court availabilities (List[schemas.AvailabilityCreate]) : A list of availabilities, in the format defined by the pydantic model in schemas.AvalabilityCreate 
+    
+    """
+    
+    
     LOGIN_URL = "https://tennispadelchampfleuri.re/login"
     AVAILABILITIES_URL = "https://tennispadelchampfleuri.re/user/disponibilites"  
     session = requests.Session()
@@ -135,6 +152,7 @@ def scrape_champ_fleuri(username:str, password:str, selected_date: str) -> List[
     
     ### Retrieve available time slots ###
     scraping_datetime = datetime.today()
+    region = "Nord"
     city = 'Saint-Denis'
     club = 'Champ-Fleuri'
     output = []
@@ -154,8 +172,9 @@ def scrape_champ_fleuri(username:str, password:str, selected_date: str) -> List[
         list_of_durations = [int(x) for x in list_to_parse[2].strip("[]").split(",")]
         max_duration = max(list_of_durations)
         
-        output.append(schemas.AvailableSlot(
+        output.append(schemas.AvailabilityCreate(
             scraping_datetime= scraping_datetime,
+            region = region,
             city= city,
             club= club,
             court= court,
@@ -173,11 +192,13 @@ if __name__ == '__main__':
     parser.add_argument("--username", type=str, required=True, help="The username of the CF account")
     parser.add_argument("--password", type=str, required=True, help="The password for the CF account")
     parser.add_argument("--date", type=str, required=True, help="The selected date in the format DD/MM/YYYY")
-    
+    parser.add_argument("--mongodb_user", type=str, help="The username for the mongodb database if data is to be inserted in a collection")
+    parser.add_argument("--mongodb_password", type=str, help="The password for the mongodb database")
     args = parser.parse_args()
     
+    
     available_slots = scrape_champ_fleuri(args.username, args.password, args.date)
-
-    for slot in available_slots:
-        print(slot)
+    insert_availabilities(mongodb_client(args.mongodb_user, args.mongodb_password),
+                          available_slots)
+    
     

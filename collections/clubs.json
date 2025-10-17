@@ -1,0 +1,10 @@
+{
+    "Nord": {
+        "Saint-Denis" : ["Champ-Fleuri", "TCD", "Hangar"],
+        "La Possession" : ["RPC", "Kaz à Padel"]
+    },
+
+    "Ouest":{
+        "Saint-Paul" : ["Oasis", "TCBSP"]
+    }
+}

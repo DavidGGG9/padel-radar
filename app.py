@@ -19,19 +19,17 @@ app = FastAPI(title="MongoDB database")
 
 
 # App landing page
-@app.get(
-    "/",
-    status_code= status.HTTP_200_OK)
+@app.get("/", status_code= status.HTTP_200_OK)
 async def read_root():
     return {"Padel Radar app": "Running"}
 
 
-@app.post(
-    "/availabilities/",
+@app.post("/availabilities/",
     response_model= None,
     status_code=status.HTTP_201_CREATED,
     tags= tags['availabilities']
 )
+
 async def create_availabilities(availabilities: List[schemas.AvailabilityCreate]):
     """
     Insert a new set of availabilities in the MongoDB [availabilities] collection.

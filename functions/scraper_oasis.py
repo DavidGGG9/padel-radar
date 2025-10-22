@@ -2,10 +2,14 @@ import time
 import schemas
 import requests
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from typing import List
+from database import instantiate_mongodb_client
+from crud import insert_availabilities
+import asyncio
 
 
-def scrape_oasis(username:str, password:str, selected_date: str) -> List[schemas.AvailableSlot]:
+def scrape_oasis(username:str = None, password:str = None, selected_date: str = None) -> List[schemas.AvailabilityCreate]:
     
     solpak = {"name": "Padel 1 - SOLPAK",
           "id": "21185ff2-c3cc-4f93-b3b4-eac9070dd8f6"}
@@ -48,7 +52,8 @@ def scrape_oasis(username:str, password:str, selected_date: str) -> List[schemas
     time.sleep(1.5)
     
     ### Retrieve available time slots ###
-    scraping_datetime = datetime.today()
+    scraping_datetime = datetime.now(ZoneInfo("Indian/Reunion"))
+    region = "Ouest"
     city = 'Saint-Paul'
     club = 'Oasis'
     output = []
@@ -60,31 +65,35 @@ def scrape_oasis(username:str, password:str, selected_date: str) -> List[schemas
                     availability_time = datetime.strptime(slot["startAt"], "%H:%M").time()
                     for price in slot["prices"]:
                         if price['bookable']:
-                            output.append(schemas.AvailableSlot(
+                            output.append(schemas.AvailabilityCreate(
                                 scraping_datetime= scraping_datetime,
+                                region= region,
                                 city= city,
                                 club= club,
                                 court= playground['name'],
                                 availability_date= datetime.strptime(selected_date, "%d/%m/%Y"),
                                 availability_time= availability_time,
-                                availability_duration= price['duration'] //60
+                                availability_duration= price['duration'] // 60
                             ))
     return output
                     
-                    
-    
+
+async def main_insert():                   
+    available_slots = scrape_oasis(args.username, args.password, args.date)
+    await insert_availabilities(instantiate_mongodb_client(args.mongodb_user, args.mongodb_password),
+                          available_slots)    
         
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(description='test scraping for Champ Fleuri padel club')
-    parser.add_argument("--username", type=str, required=False, help="The username of the CF account")
-    parser.add_argument("--password", type=str, required=False, help="The password for the CF account")
+    parser = argparse.ArgumentParser(description='test scraping for Oasis padel club')
+    parser.add_argument("--username", type=str, required=False, help="The username of the oasis account")
+    parser.add_argument("--password", type=str, required=False, help="The password for the oasis account")
     parser.add_argument("--date", type=str, required=True, help="The selected date in the format DD/MM/YYYY")
+    parser.add_argument("--mongodb_user", type=str, help="The username for the mongodb database if data is to be inserted in a collection")
+    parser.add_argument("--mongodb_password", type=str, help="The password for the mongodb database")
     
     args = parser.parse_args()
     
     available_slots = scrape_oasis(args.username, args.password, args.date)
 
-    for slot in available_slots:
-        print(slot)
-    
+    asyncio.run(main_insert())   

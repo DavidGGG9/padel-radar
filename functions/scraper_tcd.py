@@ -3,6 +3,7 @@ import schemas
 import requests
 import time
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import asyncio
 from database import instantiate_mongodb_client
 from crud import insert_availabilities
@@ -94,7 +95,7 @@ def scrape_tcd(username:str, password:str, selected_date: str) -> List[schemas.A
     # Booking
     ## Iterating over multiples hours to retrieve all possible availabilities
     ## for a given availability date
-    scraping_datetime = datetime.today()
+    scraping_datetime = datetime.now(ZoneInfo("Indian/Reunion"))
     region = "Nord"
     city = 'Saint-Denis'
     club = 'TCD'

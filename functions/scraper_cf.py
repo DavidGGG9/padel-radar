@@ -1,6 +1,7 @@
 import time
 import re
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import schemas
 import requests
 from bs4 import BeautifulSoup
@@ -151,7 +152,7 @@ def scrape_champ_fleuri(username:str, password:str, selected_date: str) -> List[
 
     
     ### Retrieve available time slots ###
-    scraping_datetime = datetime.today()
+    scraping_datetime = datetime.now(ZoneInfo("Indian/Reunion"))
     region = "Nord"
     city = 'Saint-Denis'
     club = 'Champ-Fleuri'

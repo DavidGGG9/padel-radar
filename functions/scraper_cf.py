@@ -1,13 +1,13 @@
 import time
-import os
 import re
 from datetime import datetime
 import schemas
 import requests
 from bs4 import BeautifulSoup
 from typing import List
-from database import mongodb_client
-from functions.crud import insert_availabilities
+from database import instantiate_mongodb_client
+from crud import insert_availabilities
+import asyncio
     
 
 def scrape_champ_fleuri(username:str, password:str, selected_date: str) -> List[schemas.AvailabilityCreate]:
@@ -30,8 +30,8 @@ def scrape_champ_fleuri(username:str, password:str, selected_date: str) -> List[
     session = requests.Session()
 
     # GET login page to obtain cookies + CSRF token
-    response = session.get(LOGIN_URL, timeout=10)
     try:
+        response = session.get(LOGIN_URL, timeout=10)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
     except requests.exceptions.HTTPError as e:
@@ -174,7 +174,7 @@ def scrape_champ_fleuri(username:str, password:str, selected_date: str) -> List[
         
         output.append(schemas.AvailabilityCreate(
             scraping_datetime= scraping_datetime,
-            region = region,
+            region= region,
             city= city,
             club= club,
             court= court,
@@ -185,7 +185,14 @@ def scrape_champ_fleuri(username:str, password:str, selected_date: str) -> List[
         
     return output
     
-    
+
+
+async def main_insert():
+    available_slots = scrape_champ_fleuri(args.username, args.password, args.date)
+    await insert_availabilities(instantiate_mongodb_client(args.mongodb_user, args.mongodb_password),
+                          available_slots)
+
+
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='test scraping for Champ Fleuri padel club')
@@ -196,9 +203,6 @@ if __name__ == '__main__':
     parser.add_argument("--mongodb_password", type=str, help="The password for the mongodb database")
     args = parser.parse_args()
     
-    
-    available_slots = scrape_champ_fleuri(args.username, args.password, args.date)
-    insert_availabilities(mongodb_client(args.mongodb_user, args.mongodb_password),
-                          available_slots)
+    asyncio.run(main_insert())
     
     

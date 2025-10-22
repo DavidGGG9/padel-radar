@@ -1,5 +1,4 @@
 from pymongo import AsyncMongoClient
-import os
 from pymongo.server_api import ServerApi
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -8,7 +7,7 @@ import asyncio
 
 
 @asynccontextmanager
-async def mongodb_client(user:str, password:str) -> AsyncGenerator[AsyncMongoClient, None]:
+async def instantiate_mongodb_client(user:str, password:str) -> AsyncGenerator[AsyncMongoClient, None]:
     uri = f"mongodb+srv://{user}:{password}@cluster0.dkiat2v.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
     client = AsyncMongoClient(uri, server_api=ServerApi('1'))
 
@@ -71,7 +70,7 @@ async def main():
     
     args = parser.parse_args()
     
-    async with mongodb_client(args.user, args.password) as client:
+    async with instantiate_mongodb_client(args.user, args.password) as client:
         await init_collection(client, args.db, args.collection, args.content_path)
     
         

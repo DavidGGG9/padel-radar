@@ -1,0 +1,3 @@
+- add a condition in the Delete pydantic model to enforce at least one non-empty attribute 
+- finish the RPC scraper
+- write TCD scraper asynchronously using httpx 

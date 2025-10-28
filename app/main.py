@@ -1,7 +1,7 @@
 from fastapi import FastAPI, status, Depends
 import os
 import asyncio
-from functions.database import mongodb_client
+from functions.database import instantiate_mongodb_client
 from functions import crud
 from functions import schemas
 from pymongo import AsyncMongoClient
@@ -9,7 +9,7 @@ from typing import List
 
 
 # Declare client for API calls
-client = mongodb_client(user= os.getenv('MONGODB_USER'), password= os.getenv('MONGODB_PASSWORD'))
+client = instantiate_mongodb_client(user= os.getenv('MONGODB_USER'), password= os.getenv('MONGODB_PASSWORD'))
 
 tags = [
     {'name' : 'availabilities', 'description' : 'CRUD operations for the availabilities collection'}
@@ -36,7 +36,7 @@ async def create_availabilities(availabilities: List[schemas.AvailabilityCreate]
     Does not insert availabilities if data in the collection is already fresh
     """
     
-    crud.insert_availabilities(mongodb_client, availabilities)
+    crud.insert_availabilities(client, availabilities)
     
     
     
@@ -51,4 +51,4 @@ async def read_availabilities(query_filters: schemas.AvailabilityRead):
     Query a list of availabilities based on a set of filters defined by a AvailabilityRead model
 
     """
-    crud.query_availabilities(mongodb_client, query_filters)
+    crud.query_availabilities(client, query_filters)
